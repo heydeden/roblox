@@ -1,0 +1,165 @@
+-- StarterPlayerScripts/SecurityMenu.lua
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- GUI utama
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SecurityMenu"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 200)
+frame.Position = UDim2.new(0, 20, 0, 200)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+-- Judul
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -60, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Security Menu"
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = frame
+
+-- Tombol minimize
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 25, 0, 25)
+minimizeBtn.Position = UDim2.new(1, -55, 0, 2)
+minimizeBtn.Text = "-"
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 0)
+minimizeBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 18
+minimizeBtn.Parent = frame
+
+-- Tombol close
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 25, 0, 25)
+closeBtn.Position = UDim2.new(1, -28, 0, 2)
+closeBtn.Text = "X"
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 16
+closeBtn.Parent = frame
+
+-- Container isi menu
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 1, -35)
+content.Position = UDim2.new(0, 0, 0, 35)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+-- === MENU 1: BYPASS ANTICHEAT ===
+local bypassBtn = Instance.new("TextButton")
+bypassBtn.Size = UDim2.new(1, -20, 0, 40)
+bypassBtn.Position = UDim2.new(0, 10, 0, 10)
+bypassBtn.Text = "Bypass OFF"
+bypassBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- merah = OFF
+bypassBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+bypassBtn.Font = Enum.Font.SourceSansBold
+bypassBtn.TextSize = 16
+bypassBtn.Parent = content
+
+-- === MENU 2: BARRIER COLLIDE ===
+local collideBtn = Instance.new("TextButton")
+collideBtn.Size = UDim2.new(1, -20, 0, 40)
+collideBtn.Position = UDim2.new(0, 10, 0, 60)
+collideBtn.Text = "Collide ON"
+collideBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- merah = collide aktif
+collideBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+collideBtn.Font = Enum.Font.SourceSansBold
+collideBtn.TextSize = 16
+collideBtn.Parent = content
+
+-- State
+local minimized = false
+local bypassActive = false
+local collideActive = false
+local barrierLoop = nil -- loop handler
+
+local anticheatNames = {"anticheat_Fly", "anticheat_Swim", "anticheat_Ws"}
+
+-- Minimize
+minimizeBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		content.Visible = false
+		frame.Size = UDim2.new(0, 250, 0, 35)
+	else
+		content.Visible = true
+		frame.Size = UDim2.new(0, 250, 0, 200)
+	end
+end)
+
+-- Close
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
+
+-- Fungsi toggle bypass
+local function setBypass(state)
+	for _, obj in ipairs(game:GetDescendants()) do
+		if table.find(anticheatNames, obj.Name) and obj:IsA("Script") then
+			obj.Disabled = state
+		end
+	end
+
+	bypassActive = state
+	if bypassActive then
+		bypassBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- hijau
+		bypassBtn.Text = "Bypass ON"
+	else
+		bypassBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- merah
+		bypassBtn.Text = "Bypass OFF"
+	end
+end
+
+bypassBtn.MouseButton1Click:Connect(function()
+	setBypass(not bypassActive)
+end)
+
+-- Fungsi toggle barrier collide (pakai loop)
+local function setCollide(state)
+	collideActive = state
+	if collideActive then
+		collideBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- hijau
+		collideBtn.Text = "Collide OFF"
+
+		-- mulai loop
+		barrierLoop = task.spawn(function()
+			while collideActive do
+				for _, obj in ipairs(game:GetDescendants()) do
+					if obj:IsA("BasePart") and obj.Parent and obj.Parent.Name == "barrier" then
+						obj.CanCollide = false
+					end
+				end
+				task.wait(1) -- cek tiap 1 detik
+			end
+		end)
+	else
+		collideBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- merah
+		collideBtn.Text = "Collide ON"
+
+		-- stop loop otomatis karena collideActive = false
+		-- reset semua barrier jadi collide lagi
+		for _, obj in ipairs(game:GetDescendants()) do
+			if obj:IsA("BasePart") and obj.Parent and obj.Parent.Name == "barrier" then
+				obj.CanCollide = true
+			end
+		end
+	end
+end
+
+collideBtn.MouseButton1Click:Connect(function()
+	setCollide(not collideActive)
+end)
