@@ -81,11 +81,37 @@ collideBtn.Font = Enum.Font.SourceSansBold
 collideBtn.TextSize = 16
 collideBtn.Parent = content
 
+-- Tambahan di script SecurityMenu.lua
+
+-- === MENU 3: PLAYER SIZE ===
+local sizeBtn = Instance.new("TextButton")
+sizeBtn.Size = UDim2.new(1, -20, 0, 40)
+sizeBtn.Position = UDim2.new(0, 10, 0, 110) -- di bawah menu collide
+sizeBtn.Text = "Size OFF"
+sizeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- merah = normal
+sizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sizeBtn.Font = Enum.Font.SourceSansBold
+sizeBtn.TextSize = 16
+sizeBtn.Parent = content
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- State
 local minimized = false
 local bypassActive = false
 local collideActive = false
 local barrierLoop = nil -- loop handler
+local sizeActive = false
 
 local anticheatNames = {"anticheat_Fly", "anticheat_Swim", "anticheat_Ws"}
 
@@ -162,4 +188,37 @@ end
 
 collideBtn.MouseButton1Click:Connect(function()
 	setCollide(not collideActive)
+end)
+
+-- Fungsi ubah ukuran player
+local function setPlayerSize(state)
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+	if humanoid then
+		sizeActive = state
+		if sizeActive then
+			-- Besarin player (2x)
+			humanoid.BodyDepthScale.Value = 2
+			humanoid.BodyHeightScale.Value = 2
+			humanoid.BodyWidthScale.Value = 2
+			humanoid.HeadScale.Value = 2
+
+			sizeBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- hijau
+			sizeBtn.Text = "Size ON"
+		else
+			-- Balik ke normal (1x)
+			humanoid.BodyDepthScale.Value = 1
+			humanoid.BodyHeightScale.Value = 1
+			humanoid.BodyWidthScale.Value = 1
+			humanoid.HeadScale.Value = 1
+
+			sizeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- merah
+			sizeBtn.Text = "Size OFF"
+		end
+	end
+end
+
+sizeBtn.MouseButton1Click:Connect(function()
+	setPlayerSize(not sizeActive)
 end)
